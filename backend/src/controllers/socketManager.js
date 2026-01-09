@@ -6,7 +6,14 @@ let timeOnline={}; //stores when a user joined (used for duration/states);
 
 export const connectToSocket=(Server)=>{
     //attaching Socket.io to the exisiting HTTP server
-    const io=new Server(server);
+    const io=new Server(server,{
+        cors:{
+            origin:"* ",
+            methods:["GET","POST"],
+            allowedHeaders:["*"],
+            credentials:true
+        }
+    });
 
     io.on("connection",(socket)=>{ //Runs once for Each Connected User
         console.log("user Connected:", socket.id)
@@ -47,9 +54,67 @@ export const connectToSocket=(Server)=>{
 
         });
 
-        
+        //WEBRTC SIGNALING(p2p handshake) we are using the peer 2 peer architecture
+        socket.on("signal",(tosocketId,signalData)=>{
+            //forwarding the WEBRTC signal to the target peer
+            io.to(tosocketId).emit(
+                "signal",   //event name
+                socket.id,  //sender socket id
+                signalData //offer /answer
+            );
+        });
 
-    })
+        //chat message Handling
+        socket.on("chat-message",(data,sender)=>{
+            let roomFound=null;
+
+            //finding which room does the socket belongs to forward the message to all the members of the room
+            for(const[room,sockets] of Object.entries(connections)){
+                if(sockets.includes(socket.id)){
+                    roomFound=room; //path 
+                    break;
+                }
+            }
+
+            //if socket is not part of any room ,ignore
+            if(!roomFound) return ;
+
+            //create a message array for the if it doesnt exist
+            if(!messages[roomFound]){
+                messages[roomFound]=[];
+            }
+
+            //storing the message in memory 
+            messages[roomFound].push({
+                sender:sender,
+                data:data,
+                socketId:socket.id
+            });
+
+            console.log(`Message in ${roomFound}`,sender,data);
+
+            //broadcasting the message to all the existing user of the room in which the message came
+            connections[roomFound].forEach((socketId)=>{
+                io.to(socketId).emit(
+                    "chat-message",
+                    data,
+                    sender,
+                    socket.id
+                );
+            });
+        });
+
+        //Disconnect Handling//
+        socket.on("disconnect",()=>{
+            console.log("user Disconnected:" ,socket.id);
+
+            //remove socket from all the rooms...
+            for(const room in connections){
+
+            }
+            delete timeOnline[socket.id];
+        });
+    });
 
     return io;
-}  
+} ; 
