@@ -12,6 +12,7 @@ import Grid from '@mui/material/Grid';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { AuthContext } from '../contexts/AuthContext';
 import { Snackbar } from '@mui/material';
 
 
@@ -35,6 +36,33 @@ export default function Authentication() {
 
 
     const { handleRegister, handleLogin } = React.useContext(AuthContext);
+
+    //providing all the hooked value to the auth context for login
+
+    let handleAuth=async ()=>{
+
+        try{
+            if(formState===0){
+                let result=await handleLogin(username,password); // value of the useState hook which we extracted
+            }
+
+            if(formState===1){
+                let result=await handleRegister(name ,username,password);
+                console.log(result);
+                setUsername("");
+                setMessage(result);
+                setOpen(true);
+                setError("");
+                setFormState(0); //switch to login page automatically after registration
+                setPassword("");
+            }
+
+        }catch(err){
+            console.log(err);
+            let message=(err.response.data.message);
+            setError(message);
+        }
+    }
 
 
 
