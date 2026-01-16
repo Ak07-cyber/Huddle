@@ -15,14 +15,10 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { AuthContext } from '../contexts/AuthContext';
 import { Snackbar } from '@mui/material';
 
-
-
-// TODO remove, this demo shouldn't need to reset the theme.
-
 const defaultTheme = createTheme();
 
 export default function Authentication() {
-    
+
     const [username, setUsername] = React.useState();
     const [password, setPassword] = React.useState();
     const [name, setName] = React.useState();
@@ -37,17 +33,17 @@ export default function Authentication() {
 
     const { handleRegister, handleLogin } = React.useContext(AuthContext);
 
-    //providing all the hooked value to the auth context for login
+    //extracting the auth functions from the context (Fixed: we are consuming context here, not providing to it)
 
-    let handleAuth=async ()=>{
+    let handleAuth = async () => {
 
-        try{
-            if(formState===0){
-                let result=await handleLogin(username,password); // value of the useState hook which we extracted
+        try {
+            if (formState === 0) {
+                let result = await handleLogin(username, password); // passing the local state values to the login function
             }
 
-            if(formState===1){
-                let result=await handleRegister(name ,username,password);
+            if (formState === 1) {
+                let result = await handleRegister(name, username, password);
                 console.log(result);
                 setUsername("");
                 setMessage(result);
@@ -57,9 +53,9 @@ export default function Authentication() {
                 setPassword("");
             }
 
-        }catch(err){
+        } catch (err) {
             console.log(err);
-            let message=(err.response.data.message);
+            let message = (err.response.data.message);
             setError(message);
         }
     }
@@ -107,7 +103,7 @@ export default function Authentication() {
                                 Sign Up
                             </Button>
                         </div>
-    
+
                         <Box component="form" noValidate sx={{ mt: 1 }}>
                             {formState === 1 ? <TextField
                                 margin="normal"

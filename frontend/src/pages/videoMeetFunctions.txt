@@ -1,0 +1,66 @@
+1. gotMessageFromServer
+
+Need: This function acts as the "Ear" of your application. It listens to the "secret language" (SDP and ICE) that browsers whisper to each other to set up a connection. Without this, your browser would never know how to connect to the other person.
+
+Working (The Handshake): This function handles the incoming side of the "Offer/Answer" negotiation.
+
+Parsing: It receives a raw text message from the server and converts it to JSON (signal).
+
+The Check (fromId !== socketIdRef.current): It ignores messages you sent to yourself.
+
+Scenario A: Receiving a "Call" (Offer):
+
+if (signal.sdp.type === 'offer'): Someone just joined and is "dialing" you.
+
+Step 1: setRemoteDescription: You acknowledge their setup ("Okay, I see you want to use VP8 video").
+
+Step 2: createAnswer(): You generate your response ("Okay, I accept. Here is my setup").
+
+Step 3: emit(...): You send this answer back to them so the connection can start.
+
+Scenario B: Receiving an "Answer":
+
+If you called them (sent an Offer), they reply with an Answer. This block catches that answer and saves it (setRemoteDescription), completing the circuit.
+
+Scenario C: Receiving Network Paths (ICE):
+
+if (signal.ice): The other person found a new IP address.
+
+addIceCandidate: You add this IP to your connection list so media packets can flow through that path.
+
+2. getUserMediaSuccess
+Need: This function is the "Stream Manager." It runs whenever you successfully turn on your camera, unmute your mic, or start screen sharing. Its job is to hotswap your old video feed for the new one without dropping the call.
+
+Working (The Update Loop): Because WebRTC is Peer-to-Peer, you don't just update the server once. You must update every single person in the room individually.
+
+Phase 1: Local Cleanup & Display
+
+Stop Old Tracks: window.localStream.getTracks()...stop()
+
+Why? If you switch from Camera A to Camera B, you must turn off Camera A's hardware light.
+
+Update View: localVideoref.current.srcObject = stream
+
+Why? So you can see yourself in the new view (e.g., seeing your own screen share).
+
+Phase 2: The Renegotiation Loop It loops through every person connected (for let id in connections):
+
+addStream(window.localStream): It plugs your new video cable into the existing connection.
+
+createOffer(): This is critical. Even though you are already connected, changing the stream (e.g., from 480p cam to 1080p screen share) requires a new negotiation.
+
+emit('signal'...): You tell the other peers: "Hey, my video input just changed. Here is the new offer."
+
+Phase 3: The "Stop Sharing" Handler (track.onended) This specific block listens for external interruptions.
+
+Example: If you are Screen Sharing, Chrome shows a floating bar at the bottom saying "Stop Sharing".
+
+If the user clicks that browser button (instead of your app's button), this onended event fires.
+
+The Reaction:
+
+It updates React state (setVideo(false)).
+
+It immediately switches to the "Black Silence" stream (sending a black screen).
+
+It triggers the loop again to tell everyone: "I stopped sharing, so now I am sending you a black screen."

@@ -1,15 +1,15 @@
-import axios from axios;
+import axios from "axios";
 import httpStatus from "http-status";
 import { useContext, createContext, useState } from "react";
 import { useNavigate } from "react-router-dom"; //for navigating to the home page after successfull login
-import server from "../environment";
-
+//import server from "./environment"
 
 
 export const AuthContext=createContext({});
 
 const client =axios.create({
-    baseURL: "${server}/api/v1/users" //production..
+    //baseURL: "${server}/api/v1/users" 
+    baseURL: "http://localhost:8000/api/v1/users" //production..
 })
 
 export const AuthProvider=({children})=>{
@@ -82,8 +82,8 @@ export const AuthProvider=({children})=>{
         userData,setUserData,addToUserHistory,handleLogin,handleRegister,getHistoryOfUser
     }
 
-    return <AuthContext.provider value={data}>
+    return <AuthContext.Provider value={data}>
         {children}
-    </AuthContext.provider>
+    </AuthContext.Provider>
 
 }
