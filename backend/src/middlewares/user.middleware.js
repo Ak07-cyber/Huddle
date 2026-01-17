@@ -1,17 +1,17 @@
-//works as a auth guard for required url;
-
 import jwt from "jsonwebtoken";
 
-export function userMiddleware(req,res,next){
-    const token=req.headers.token;
-    const decoded=jwt.verify(token,JWT_USER_PASSWORD);
+export function userMiddleware(req, res, next) {
+    const token = req.headers.token; 
 
-    if(decoded){
-        req.userId=decoded.indexOf;
+    if (!token) {// to verify the exsistence of the token
+        return res.status(404).json({ message: "Token not found" });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_USER_PASSWORD);
+        req.userId = decoded.id; // Attaching userId to request object
         next();
-    }else{
-        res.status(403).json({
-            message: "You are not signed in"
-        })
+    } catch (e) {
+        return res.status(403).json({ message: "Invalid Token" });
     }
 };
